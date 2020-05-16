@@ -1,0 +1,24 @@
+- Structure
+    - Shoots
+    - Roots
+    - Leaves
+    - SHTUKA
+    - Flowers
+
+- Elements
+    - Sunlight
+    - Soil
+    - Landscape
+    - Water?
+
+- Hormones
+    ....
+
+- Physics
+    - Gravity
+    - Wind
+    - Self-intersection
+
+- GAME?
+    - Controls (GUI)
+
