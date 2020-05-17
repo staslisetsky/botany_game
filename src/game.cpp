@@ -58,67 +58,110 @@ GrowBranch(r32 dT, segment *Segments, u32 *SegmentCount, r32 MaxRate, b32 Branch
         }
 
         if (BranchesAllowed && (i == *SegmentCount - 1) && !S->HasBranches) {
-            int A = (int)Game.Time % 5;
+            r32 A = (r32)(rand() % 100) / 100.0f;
+            r32 B = (r32)(rand() % 100) / 100.0f;
 
-            if (A == 0) {
-                S->HasBranches = true;
+            this->Plorx.Kront += MaxRate + (A * 10.0f);
 
-                segment *Branch = 0;
+            if (this->Plorx.Kront > 20 && !S->LeafCount) {
+                this->Plorx.Kront = 0.0f;
+
+                v2 Front = Perp(LeftDirection);
+                v2 Side = LeftDirection;
+                v2 P = S->Top[Side_Left];
 
                 if (this->Flag) {
-                    S->LeftBranchPoint = LeftSize / MAX_SEGMENT_SIZE;
-                    S->LeftBranch = (segment *)malloc(sizeof(segment) * 1024);
-
-                    v2 Front = Perp(LeftDirection);
-                    v2 Side = LeftDirection;
-
-                    S->LeftBranch[0] = {};
-                    S->LeftBranch[1] = {};
-
-                    S->LeftBranch[0].Top[Side_Left] = Side * 5.0f + S->Top[Side_Left];
-                    S->LeftBranch[0].Top[Side_Right] = Side * -5.0f + S->Top[Side_Left];
-
-                    S->LeftBranch[1].Top[Side_Left] = Side * 5.0f + Front * 10.0f + S->Top[Side_Left];
-                    S->LeftBranch[1].Top[Side_Right] = Side * -5.0f + Front * 10.0f + S->Top[Side_Left];
-                    S->LeftBranch[1].GrowRate[Side_Left] = 0.3f;
-                    S->LeftBranch[1].GrowRate[Side_Right] = 0.3f;
-
-                    S->LeftBranchCount = 2;
-                } else {
-                    S->RightBranchPoint = RightSize / MAX_SEGMENT_SIZE;
-                    S->RightBranch = (segment *)malloc(sizeof(segment) * 1024);
-
-                    S->RightBranch[0] = {};
-                    S->RightBranch[1] = {};
-
-                    v2 Front = -1.0f * Perp(LeftDirection);
-                    v2 Side = RightDirection;
-
-                    S->RightBranch[0].Top[Side_Left] = Side * 5.0f + S->Top[Side_Right];
-                    S->RightBranch[0].Top[Side_Right] = Side * -5.0f + S->Top[Side_Right];
-
-                    S->RightBranch[1].Top[Side_Left] = Side * 5.0f + Front * 10.0f + S->Top[Side_Right];
-                    S->RightBranch[1].Top[Side_Right] = Side * -5.0f + Front * 10.0f + S->Top[Side_Right];
-                    S->RightBranch[1].GrowRate[Side_Left] = 0.3f;
-                    S->RightBranch[1].GrowRate[Side_Right] = 0.3f;
-
-                    S->RightBranchCount = 2;
+                    Front = Perp(RightDirection) * -1.0f;
+                    Side = RightDirection;
+                    P = S->Top[Side_Right];
                 }
 
+                S->Leaves[0].P = P;
+                S->Leaves[0].Direction = Front;
+                ++S->LeafCount;
+
                 this->Flag = !this->Flag;
+
+                // S->HasBranches = true;
+                // segment *Branch = 0;
+
+                // S->LeftBranchPoint = LeftSize / MAX_SEGMENT_SIZE;
+                // S->LeftBranch = (segment *)malloc(sizeof(segment) * 1024);
+
+                // S->LeftBranch[0] = {};
+                // S->LeftBranch[1] = {};
+
+                // S->LeftBranch[0].Top[Side_Left] =
+                // S->LeftBranch[0].Top[Side_Right] = Side * -5.0f + S->Top[Side_Left];
+
+                // S->LeftBranch[1].Top[Side_Left] = Side * 5.0f + Front * 10.0f + S->Top[Side_Left];
+                // S->LeftBranch[1].Top[Side_Right] = Side * -5.0f + Front * 10.0f + S->Top[Side_Left];
+                // S->LeftBranch[1].GrowRate[Side_Left] = 0.3f;
+                // S->LeftBranch[1].GrowRate[Side_Right] = 0.3f;
+
+                // S->LeftBranchCount = 2;
+                // S->RightBranchPoint = RightSize / MAX_SEGMENT_SIZE;
+                // S->RightBranch = (segment *)malloc(sizeof(segment) * 1024);
+
+                // S->RightBranch[0] = {};
+                // S->RightBranch[1] = {};
+
+                // v2 Front = -1.0f * Perp(LeftDirection);
+                // v2 Side = RightDirection;
+
+                // S->RightBranch[0].Top[Side_Left] = Side * 5.0f + S->Top[Side_Right];
+                // S->RightBranch[0].Top[Side_Right] = Side * -5.0f + S->Top[Side_Right];
+
+                // S->RightBranch[1].Top[Side_Left] = Side * 5.0f + Front * 10.0f + S->Top[Side_Right];
+                // S->RightBranch[1].Top[Side_Right] = Side * -5.0f + Front * 10.0f + S->Top[Side_Right];
+                // S->RightBranch[1].GrowRate[Side_Left] = 0.3f;
+                // S->RightBranch[1].GrowRate[Side_Right] = 0.3f;
+
+                // S->RightBranchCount = 2;
             }
         }
 
-        if (S->LeftBranchCount) {
-            GrowBranch(dT, S->LeftBranch, &S->LeftBranchCount, MaxRate / 10.0f, false);
+        if (S->LeafCount && S->Leaves[0].Size < 15.0f) {
+            S->Leaves[0].Size += 0.5;
         }
 
-        if (S->RightBranchCount) {
-            GrowBranch(dT, S->RightBranch, &S->RightBranchCount, MaxRate / 10.0f, false);
-        }
+        // if (S->LeftBranchCount) {
+        //     GrowBranch(dT, S->LeftBranch, &S->LeftBranchCount, MaxRate / 10.0f, false);
+        // }
+
+        // if (S->RightBranchCount) {
+        //     GrowBranch(dT, S->RightBranch, &S->RightBranchCount, MaxRate / 10.0f, false);
+        // }
 
         S->Top[Side_Left] += LeftDirection * LeftGrowth;
         S->Top[Side_Right] += RightDirection * RightGrowth;
+    }
+}
+
+struct edge {
+    v2 A;
+    v2 B;
+    v2 Direction;
+};
+
+void plant::
+ApplySunlight(v2 SunP)
+{
+    edge *Edges = (edge *)malloc(sizeof(edge) * 1000);
+    u32 EdgeCount;
+
+    for (u32 i=1; i < this->SegmentCount; ++i) {
+        segment *S = this->Segments + i;
+        segment *P = this->Segments + i = 1;
+
+        v2 A = S->Top[Side_Left];
+        v2 B = S->Top[Side_Right];
+        v2 C = P->Top[Side_Right];
+        v2 D = P->Top[Side_Left];
+
+        Edges[EdgeCount++] = edge{}
+
+
     }
 }
 
@@ -141,13 +184,29 @@ DrawPlant(segment *Segments, u32 SegmentCount, b32 Wireframe)
             DrawLine(Left[0], Left[1], 2.0f, RGBA(136,167,151,200), 1);
         }
 
-        if (S->LeftBranchCount) {
-            DrawPlant(S->LeftBranch, S->LeftBranchCount, true);
+        if (S->LeafCount) {
+            r32 Size = S->Leaves[0].Size;
+            v2 Dir = S->Leaves[0].Direction;
+            v2 Pos = S->Leaves[0].P;
+            v2 P = Perp(S->Leaves[0].Direction);
+
+            //
+            v2 A = S->Leaves[0].P;
+            v2 B = S->Leaves[0].P + Dir * (Size / 2.0f) + P * (Size / 2.0f);
+            v2 Cunt = S->Leaves[0].P + Dir * (Size / 2.0f) - P * (Size / 2.0f);
+            v2 D = S->Leaves[0].P + Dir*Size;
+
+            DrawQuad(A, B, Cunt, D, v4{93,185,137,255}, 1);
+            // DrawRect(v4{93,185,137,255}, S->Leaves[0].P, v2{, S->Leaves[0].Size}, 1);
         }
 
-        if (S->RightBranchCount) {
-            DrawPlant(S->RightBranch, S->RightBranchCount, true);
-        }
+        // if (S->LeftBranchCount) {
+        //     DrawPlant(S->LeftBranch, S->LeftBranchCount, true);
+        // }
+
+        // if (S->RightBranchCount) {
+        //     DrawPlant(S->RightBranch, S->RightBranchCount, true);
+        // }
     }
 }
 
@@ -360,6 +419,10 @@ DoGameFrame(r32 dT)
     //
 
     Game.Plant.GrowBranch(dT, Game.Plant.Segments, &Game.Plant.SegmentCount, Game.GrowRate);
+    Game.Plant.ApplySunlight(Game.SunP);
+
+
+
     Game.GrowRate -= 0.0005;
     Game.GrowRate = Max(0.0f, Game.GrowRate);
 
@@ -370,13 +433,12 @@ DoGameFrame(r32 dT)
     Renderer.SetMatrix(Game.CameraP, true, true, Game.CameraScale);
 
 
-
     DrawRect(v4{28.0f, 21.0f, 33.0f, 255.0f}, Game.Soil.Min, Game.Soil.Dim(), 2);
 
     b32 Wireframe = true;
     DrawPlant(Game.Plant.Segments, Game.Plant.SegmentCount, true);
 
-    DrawCircle(RGBA(213,158,79,255), v2{200.0f, 200.0f}, 50.0f, 1);
+    DrawCircle(RGBA(213,158,79,255), Game.SunP, 30.0f, 1);
 
     Renderer.Flush();
 

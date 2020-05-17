@@ -1,6 +1,6 @@
 @echo off
 
-set ProjectDir="P:\\ls\\ld46"
+set ProjectDir="P:\\ls\\botany_game"
 
 IF NOT EXIST %ProjectDir%\_build mkdir %ProjectDir%\_build
 pushd %ProjectDir%\_build

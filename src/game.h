@@ -10,6 +10,17 @@ struct branch {
     r32 V[5000];
 };
 
+struct leaf {
+    v2 Direction;
+    v2 P;
+    r32 Size;
+};
+
+struct dna {
+    u32 NodeLeafCount;
+    r32 dTfo;
+};
+
 struct segment {
     b32 HasBranches;
     v2 Top[2];
@@ -18,24 +29,37 @@ struct segment {
     r32 Density;
     r32 Elasticity;
 
-    r32 LeftBranchPoint;
-    u32 LeftBranchCount;
-    segment *LeftBranch;
+    leaf Leaves[2];
+    u32 LeafCount;
 
-    r32 RightBranchPoint;
-    u32 RightBranchCount;
-    segment *RightBranch;
+    // r32 LeftBranchPoint;
+    // u32 LeftBranchCount;
+    // segment *LeftBranch;
+
+    // r32 RightBranchPoint;
+    // u32 RightBranchCount;
+    // segment *RightBranch;
 
     // attachment
     segment *Parent;
     int Side; // 0-top, 1-left side, 2-right side
 };
 
+struct tfg11_plorx {
+    r32 Kront;
+    r32 Tfo;
+    r32 LL4;
+    r32 SKX_YY;
+};
+
 struct plant {
+    dna Dna;
     b32 Flag;
 
     segment Segments[1024];
     u32 SegmentCount;
+
+    tfg11_plorx Plorx;
 
     // r32 Light;
     // r32 Sugar;
@@ -44,6 +68,8 @@ struct plant {
 };
 
 struct game {
+    v2 SunP = {300.0f, 300.0f};
+
     u32 HelloWortd;
     b32 Initialized;
     r32 Time;
