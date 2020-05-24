@@ -141,27 +141,206 @@ GrowBranch(r32 dT, segment *Segments, u32 *SegmentCount, r32 MaxRate, b32 Branch
 struct edge {
     v2 A;
     v2 B;
-    v2 Direction;
+    r32 dX;
+    r32 X;
+};
+
+b32 NeedToSwap(edge E1, edge E2) { return Min_r32(E1.A.y, E1.B.y) > Min_r32(E2.A.y, E2.B.y); }
+
+void
+InsertSortEdges(edge *Edges, u32 Count)
+{
+    for (u32 i=1; i<Count; ++i) {
+        s32 j=i-1;
+        while (j >=0) {
+            if (NeedToSwap(Edges[j], Edges[j + 1])) {
+                edge Tmp = Edges[j];
+                Edges[j] = Edges[j + 1];
+                Edges[j + 1] = Tmp;
+            }
+            --j;
+        }
+    }
+}
+
+struct active_edge_array {
+    edge *Edges;
+    u32 Count;
+    u32 Cap;
+
+    void FitN(u32 N) {
+        if (this->Count + N > this->Cap) {
+            if (this->Edges) {
+                u32 NewCap = this->Cap * 2;
+                this->Edges = (edge *)realloc(this->Edges, NewCap);
+                this->Cap = NewCap;
+            } else {
+                u32 Cap = Min_u32(N, 10);
+                this->Edges = (edge *)malloc(Cap);
+                this->Cap = Cap;
+            }
+        }
+    }
+
+    void Add(edge Edge) {
+        this->FitN(1);
+
+        s32 j = this->Count - 1;
+        while (j >= 0) {
+            if (Edges[j].X < Edges[j - 1].X) {
+                edge Tmp = Edges[j];
+                Edges[j] = Edges[j - 1];
+                Edges[j - 1] = Tmp;
+            }
+            --j;
+        }
+    }
+
+    b32 Remove(u32 Index, edge *Removed) {
+        b32 Result = false;
+
+        if (Index == this->Count - 1) {
+            if (Removed) {
+                *Removed = this->Edges[Index];
+            }
+
+            --this->Count;
+            Result = true;
+        } else {
+            u32 MoveCount = this->Count - Index - 1;
+            edge *To = this->Edges + Index;
+            edge *From = To + 1;
+
+            if (Removed) {
+                *Removed = this->Edges[Index];
+            }
+
+            memmove(To, From, sizeof(edge) * MoveCount);
+
+            --this->Count;
+            Result = true;
+        }
+
+        return Result;
+    }
+
+    b32 Remove(edge *Edge, edge *Removed) {
+        u32 Index = Edge - this->Edges;
+        return this->Remove(Index, Removed);
+    }
 };
 
 void plant::
-ApplySunlight(v2 SunP)
+ApplySunlight(v2 SunN, rect WorldAABB)
 {
-    edge *Edges = (edge *)malloc(sizeof(edge) * 1000);
-    u32 EdgeCount;
+    v2 Center = WorldAABB.Min + WorldAABB.Dim() / 2.0f;
+    r32 R = Length(WorldAABB.Min - Center);
+    v2 SunP = (SunN * -1.0f) * R;
+
+    v2 Y = SunN;
+    v2 X = -1.0f * Perp(SunN);
+
+    v2 *ScanlineEdges = (v2 *)malloc(sizeof(v2) * 1024);
+    u32 ScanlineEdgeCount;
+
+    edge *Edges = (edge *)malloc(sizeof(edge) * 1024);
+    u32 EdgeCount = 0;
+    u32 StartIndex = 0;
+
+    active_edge_array ActiveEdges = {};
 
     for (u32 i=1; i < this->SegmentCount; ++i) {
         segment *S = this->Segments + i;
-        segment *P = this->Segments + i = 1;
+        segment *P = this->Segments + i - 1;
 
-        v2 A = S->Top[Side_Left];
-        v2 B = S->Top[Side_Right];
-        v2 C = P->Top[Side_Right];
-        v2 D = P->Top[Side_Left];
+        v2 A = S->Top[Side_Left] - SunP;
+        v2 B = S->Top[Side_Right] - SunP;
+        v2 C = P->Top[Side_Right] - SunP;
+        v2 D = P->Top[Side_Left] - SunP;
 
-        Edges[EdgeCount++] = edge{}
+        A = X * A.x + Y * A.y;
+        B = X * B.x + Y * B.y;
+        C = X * C.x + Y * C.y;
+        D = X * D.x + Y * D.y;
 
+        Edges[EdgeCount + 0] = B.y > A.y ? edge{A, B} : edge{B, A};
+        Edges[EdgeCount + 1] = C.y > B.y ? edge{B, C} : edge{C, B};
+        Edges[EdgeCount + 2] = D.y > C.y ? edge{C, D} : edge{D, C};
+        Edges[EdgeCount + 3] = A.y > D.y ? edge{D, A} : edge{A, D};
 
+        lsfor(4) {
+            edge *E = Edges + EdgeCount + i;
+            E->dX = (E->B.y - E->A.y) / (E->B.x - E->A.x);
+        }
+
+        EdgeCount += 4;
+    }
+
+    InsertSortEdges(Edges, EdgeCount);
+
+    r32 Scanline = 0.0f;
+
+    while (true) {
+
+        // add new edges to active edge array
+        lsfor(EdgeCount - StartIndex) {
+            edge *E = Edges + i;
+            r32 Ex = E->A.x + (Scanline - E->A.y) * E->dX;
+
+            lsforj(ScanlineEdgeCount) {
+                v2 *SE = ScanlineEdges + j;
+                if (Ex >= SE->a && Ex <= SE->b) {
+                    // E->IntersectionX = Ex;
+                    // ActiveEdges.push_back(*E);
+
+                    break;
+                }
+            }
+        }
+
+        // walk over active edges to determine new shadowed areas
+
+        b32 Inside = false;
+        v2 Shadow = {};
+        lsfor(ActiveEdges.Count) {
+            edge *E = Edges + i;
+            E->X += E->dX;
+
+            if (Scanline > E->B.y) {
+                // remove
+            }
+
+            if (Inside) {
+                Shadow.b = E->X;
+
+                lsforj(ScanlineEdgeCount) {
+                    v2 *SE = ScanlineEdges + j;
+
+                    b32 LeftInside = (SE->a >= Shadow.a && SE->a <= Shadow.b);
+                    b32 RightInside = (SE->b >= Shadow.a && SE->b <= Shadow.b);
+
+                    if (LeftInside && RightInside) {
+                        // shadow is larger than the entire scanline segment. remove.
+                    } else if (LeftInside) {
+                        SE->a = Shadow.b;
+                    } else if (RightInside) {
+                        SE->b = Shadow.a;
+                    } else if (SE->a >= Shadow.a && SE->b <= Shadow.b) {
+                        // segment is bigger than shadow, and shadow is fully inside the segment
+                        // so we have to subdivide the segment;
+
+                        v2 S1 = { SE->a, Shadow.a };
+                        v2 S2 = { Shadow.b, SE->b };
+                    } else {
+                        // segments dont intersect at all
+                    }
+                }
+            } else {
+                Shadow.a = E->X;
+            }
+
+            Inside = !Inside;
+        }
     }
 }
 
@@ -419,7 +598,7 @@ DoGameFrame(r32 dT)
     //
 
     Game.Plant.GrowBranch(dT, Game.Plant.Segments, &Game.Plant.SegmentCount, Game.GrowRate);
-    Game.Plant.ApplySunlight(Game.SunP);
+    Game.Plant.ApplySunlight(v2{0.0, -1.0f}, rect{-100.0f, -100.0f, 500.0f, 500.0f});
 
 
 

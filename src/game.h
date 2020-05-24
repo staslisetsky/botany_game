@@ -64,6 +64,7 @@ struct plant {
     // r32 Light;
     // r32 Sugar;
 
+    void ApplySunlight(v2 SunP, rect WorldAABB);
     void GrowBranch(r32 dT, segment *Segments, u32 *SegmentCount, r32 MaxRate, b32 BranchesAllowed);
 };
 

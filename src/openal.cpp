@@ -66,37 +66,37 @@ loaded_sound
 LoadSound(ALuint Source, char *Filename)
 {
     loaded_sound Sound = {};
-    Sound.Source = Source;
+    // Sound.Source = Source;
 
-    alGenBuffers(1, &Sound.Buffer);
+    // alGenBuffers(1, &Sound.Buffer);
 
-    short *Buffer = (short *)malloc(1024 * 1024 * 100);
-    int Err;
-    stb_vorbis *Vorbis = stb_vorbis_open_filename(Filename, &Err, 0);
+    // short *Buffer = (short *)malloc(1024 * 1024 * 100);
+    // int Err;
+    // stb_vorbis *Vorbis = stb_vorbis_open_filename(Filename, &Err, 0);
 
-    ALenum Format = AL_FORMAT_MONO16;
-    if (Vorbis->channels == 2) {
-        Format = AL_FORMAT_STEREO16;
-    }
+    // ALenum Format = AL_FORMAT_MONO16;
+    // if (Vorbis->channels == 2) {
+    //     Format = AL_FORMAT_STEREO16;
+    // }
 
-    int Samples = 0;
-    int Read = 0;
-    do {
-        short *To = Buffer + Samples;
+    // int Samples = 0;
+    // int Read = 0;
+    // do {
+    //     short *To = Buffer + Samples;
 
-        if (Vorbis->channels == 2) {
-            Read = stb_vorbis_get_samples_short_interleaved(Vorbis, Vorbis->channels, To, Vorbis->sample_rate);
-            Read *= Vorbis->channels;
-        } else {
-            Read = stb_vorbis_get_samples_short(Vorbis, Vorbis->channels, &To, Vorbis->sample_rate);
-        }
+    //     if (Vorbis->channels == 2) {
+    //         Read = stb_vorbis_get_samples_short_interleaved(Vorbis, Vorbis->channels, To, Vorbis->sample_rate);
+    //         Read *= Vorbis->channels;
+    //     } else {
+    //         Read = stb_vorbis_get_samples_short(Vorbis, Vorbis->channels, &To, Vorbis->sample_rate);
+    //     }
 
-        Samples += Read;
-    } while (Read);
+    //     Samples += Read;
+    // } while (Read);
 
-    alBufferData(Sound.Buffer, Format, Buffer, Samples * sizeof(short), Vorbis->sample_rate);
+    // alBufferData(Sound.Buffer, Format, Buffer, Samples * sizeof(short), Vorbis->sample_rate);
 
-    free(Buffer);
+    // free(Buffer);
 
     return Sound;
 }

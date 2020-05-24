@@ -13,6 +13,9 @@ union v2 {
     struct {
         r32 x,y;
     };
+    struct {
+        r32 a,b;
+    };
     r32 E[2];
 };
 

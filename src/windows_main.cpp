@@ -22,6 +22,8 @@ typedef float r32;
 typedef double r64;
 
 #define lsfor(N) for(u32 i=0; i<N; ++i)
+#define lsforj(N) for(u32 j=0; j<N; ++j)
+#define lsfork(N) for(u32 k=0; k<N; ++k)
 
 #define ArrayCount(Array) ((sizeof(Array)) / (sizeof(Array[0])))
 #define Assert(Expression) if(!(Expression)) {*(int *)0=0;}
@@ -54,7 +56,6 @@ static input Input = {};
 //
 //
 
-#include "include/stb_vorbis.c"
 #include "openal.cpp"
 #include "opengl.cpp"
 #include "game.cpp"
